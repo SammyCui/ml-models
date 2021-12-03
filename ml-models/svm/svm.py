@@ -34,7 +34,7 @@ class SVM(model_base.BaseModel):
         :param max_iters: limit on solver's num of iteration
         :param step_size: step size for each learning iteration
         :param gamma: kernel coefficient; only for kernel=rbf, poly or sigmoid
-        xx
+        xxjjj
         """
         # TODO Imbalanced class?
         self.C = C
