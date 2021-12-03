@@ -35,7 +35,7 @@ class SVM(model_base.BaseModel):
         :param step_size: step size for each learning iteration
         :param gamma: kernel coefficient; only for kernel=rbf, poly or sigmoid
         """
-
+        # TODO Imbalanced class?
         self.C = C
         self.reg = reg
         self.kernel = kernel
@@ -43,7 +43,7 @@ class SVM(model_base.BaseModel):
         self.slack = slack
         self.S = S
         self.max_iters = max_iters
-        #TODO: step_size = 1 / K(X1,X2) will converge
+        # TODO: step_size = 1 / K(X1,X2) will converge
         self.step_size = step_size
         self.gamma = gamma
         self.degree = degree
@@ -60,6 +60,8 @@ class SVM(model_base.BaseModel):
             gradient = ones - constant.dot(lambdas)
             lambdas += self.step_size * gradient
             lambdas = np.where(lambdas < 0, 0, lambdas)
+            # TODO: check
+            # self.alpha[self.alpha > self.C] = self.C
 
         sv, labels, sv_lambdas = X[lambdas > 0, :], y[lambdas > 0], lambdas[lambdas > 0]
         self.sv, self.labels, self.sv_lambdas = sv, labels, sv_lambdas
@@ -102,7 +104,7 @@ class SVM(model_base.BaseModel):
 
 
 if __name__ == '__main__':
-    data_train = pd.read_csv('/Users/xuanmingcui/Downloads/SPECTF_train.csv', header=None).to_numpy()
+    data_train = pd.read_csv('data/SPECTF_test', header=None).to_numpy()
     data_test = pd.read_csv('/Users/xuanmingcui/Downloads/SPECTF_test.csv', header=None).to_numpy()
     X_train, X_test = data_train[:, 1:], data_test[:, 1:]
     y_train, y_test = data_train[:, 0], data_test[:, 0]
