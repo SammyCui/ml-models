@@ -123,8 +123,8 @@ if __name__ == '__main__':
     normalized_val_X, normalized_test_X = normalizer.transform(X_val), normalizer.transform(X_test)
 
     svm = SVM(C=1, max_iters=2000)
-    svm.fit(X_train, y_train, X_val, y_val)
-    print('Accuracy of SVM: ', performance.accuracy(svm.predict(X_test), y_test))
+    svm.fit(normalized_train_X, y_train, normalized_val_X, y_val)
+    print('Accuracy of SVM: ', performance.accuracy(svm.predict(normalized_test_X), y_test))
     benchmark_svc = SVC(max_iter=1000)
     benchmark_svc.fit(normalized_train_X, y_train)
     benchmark_svc_prediction = benchmark_svc.predict(normalized_test_X)
