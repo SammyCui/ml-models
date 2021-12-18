@@ -20,10 +20,10 @@ class SVM(BaseModel):
                  C: float = 1,
                  kernel: str = 'rbf',
                  max_iters: int = -1,
-                 step_size: float = 0.01,
+                 step_size: float = 0.001,
                  gamma: str = 'auto',
                  degree: int = 2,
-                 momentum: float = 0.1):
+                 momentum: float = 0.007):
         """
 
         :param C: Strength of regularization
@@ -40,43 +40,40 @@ class SVM(BaseModel):
         self.step_size = step_size
         self.gamma = gamma
         self.degree = degree
-        self.sv, self.labels, self.lambdas, self.b, self.eval_scores = None, None, None, None, []
+        self.sv, self.labels, self.alpha, self.b, self.eval_scores = None, None, None, None, []
         self.is_trained = False
         self.momentum = momentum
         # testing
         self.changes = []
-        self.losses = []
-
+        self.scores = []
 
     def fit(self, X, y, X_val, y_val):
         self.is_trained = True
         # TODO: randomize?
-        lambdas = np.zeros(X.shape[0])
+        self.alpha = np.zeros(X.shape[0])
         ones = np.ones(X.shape[0])
         constant = np.outer(y, y) * getattr(SVM, self.kernel)(self, X, X)
         # TODO: Stochastic update
         # Gradient descent with momentumR
         last_change = 0
         for _ in range(self.max_iters):
-            gradient = ones - constant.dot(lambdas)
-            new_change = self.step_size * gradient + self.momentum * last_change
-            lambdas += new_change
+            gradient = ones - constant.dot(self.alpha)
+            self.alpha += self.step_size * gradient + self.momentum * last_change
             self.changes.append(np.mean(gradient))
-            last_change = gradient
-            lambdas = np.where(lambdas < 0, 0, lambdas)
+            last_change = ones - gradient
+            self.alpha = np.where(self.alpha < 0, 0, self.alpha)
             # Slack
-            lambdas[lambdas > self.C] = self.C
-            sv, labels, lambdas = X[lambdas > 0, :], y[lambdas > 0], lambdas[lambdas > 0]
-            self.sv, self.labels, self.lambdas = sv, labels, lambdas
-            # loss = np.sum(self.lambdas) - 0.5 * np.sum(np.outer(self.lambdas, self.lambdas) * constant)
-            # self.losses.append(loss)
+            self.alpha[self.alpha > self.C] = self.C
 
-        index = np.where(self.lambdas > 0 & (self.lambdas < self.C))[0]
-        b_i = y[index] - (lambdas * y).dot(getattr(SVM, self.kernel)(self, X, X[index]))
-        self.b = np.mean(b_i)
-            # if self.sv is not None:
-            #     acc_score = performance.accuracy(self.predict(X_val), y_val)
-            #     self.eval_scores.append(acc_score)
+            index = np.where(self.alpha > 0 & (self.alpha < self.C))[0]
+            b_i = y[index] - (self.alpha * y).dot(getattr(SVM, self.kernel)(self, X, X[index]))
+            self.b = np.mean(b_i)
+            self.labels, self.sv = y, X
+
+            score = performance.accuracy(self.predict(X_val), y_val)
+            self.scores.append(score)
+
+        self.sv, self.labels, self.alpha = X[self.alpha > 0, :], y[self.alpha > 0], self.alpha[self.alpha > 0]
 
         return self
 
@@ -87,7 +84,7 @@ class SVM(BaseModel):
         """
         if not self.is_trained:
             raise ModelNotTrainedError()
-        decision_list = (self.lambdas * self.labels).dot(getattr(SVM, self.kernel)(self, self.sv, X)) + self.b
+        decision_list = (self.alpha * self.labels).dot(getattr(SVM, self.kernel)(self, self.sv, X)) + self.b
         return np.sign(decision_list)
 
     def linear(self, x: np.array, v: np.array) -> np.array:
@@ -113,7 +110,6 @@ class SVM(BaseModel):
 
 # TODO: slack variable, multiclass, more kernel func,
 
-
 if __name__ == '__main__':
     fileDir = os.path.dirname(os.path.realpath('__file__'))
     data_train = pd.read_csv(os.path.join(fileDir, '../data/SPECTF_train.csv'), header=None).to_numpy()
@@ -126,17 +122,14 @@ if __name__ == '__main__':
     normalized_train_X = normalizer.fit_transform(X_train)
     normalized_val_X, normalized_test_X = normalizer.transform(X_val), normalizer.transform(X_test)
 
-
-
-    svm = SVM(C=1, max_iters=1000)
+    svm = SVM(C=1, max_iters=2000)
     svm.fit(X_train, y_train, X_val, y_val)
-    print('Accuracy of SVM: ', performance.accuracy(svm.predict(normalized_test_X), y_test))
+    print('Accuracy of SVM: ', performance.accuracy(svm.predict(X_test), y_test))
     benchmark_svc = SVC(max_iter=1000)
-    benchmark_svc.fit(X_train, y_train)
-    benchmark_svc_prediction = benchmark_svc.predict(X_test)
+    benchmark_svc.fit(normalized_train_X, y_train)
+    benchmark_svc_prediction = benchmark_svc.predict(normalized_test_X)
     print('Accuracy of sklearn.svm.SVC: ', performance.accuracy(benchmark_svc_prediction, y_test))
-    plt.plot(svm.losses)
+    plt.plot(svm.scores)
     plt.show()
-
-
-
+    plt.plot(svm.changes)
+    plt.show()

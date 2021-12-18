@@ -6,15 +6,15 @@ def TP(pred_labels: np.array, true_labels: np.array):
 
 
 def TN(pred_labels: np.array, true_labels: np.array):
-    return np.sum(np.logical_and(pred_labels == 0, true_labels == 0))
+    return np.sum(np.logical_and(pred_labels == -1, true_labels == -1))
 
 
 def FP(pred_labels: np.array, true_labels: np.array):
-    return np.sum(np.logical_and(pred_labels == 1, true_labels == 0))
+    return np.sum(np.logical_and(pred_labels == 1, true_labels == -1))
 
 
 def FN(pred_labels: np.array, true_labels: np.array):
-    return np.sum(np.logical_and(pred_labels == 0, true_labels == 1))
+    return np.sum(np.logical_and(pred_labels == -1, true_labels == 1))
 
 
 def precision(pred_labels, true_labels):
@@ -33,6 +33,6 @@ def accuracy(pred_labels, true_labels):
 
 
 if __name__ == '__main__':
-    _pred_labels = np.asarray([0, 1, 1, 0, 1, 0, 0])
-    _true_labels = np.asarray([0, 0, 1, 0, 0, 1, 0])
-    print(accuracy(np.array([1,0,1,0]), np.array([1,1,1,0])))
+    _pred_labels = np.asarray([-1, 1, 1, -1, 1, -1, -1])
+    _true_labels = np.asarray([-1, -1, 1, -1, -1, 1, -1])
+    print(accuracy(np.array([1,-1,1,-1]), np.array([1,1,1,-1])))
