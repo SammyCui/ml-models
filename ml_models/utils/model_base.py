@@ -25,3 +25,11 @@ class ModelNotTrainedError(Exception):
 
     def __str__(self):
         return repr(self.value)
+
+
+class ModelAlreadyTrainedError(Exception):
+    def __init__(self, value: str = "The model is already trained. Cannot re-train it."):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
